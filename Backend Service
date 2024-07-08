@@ -1,0 +1,56 @@
+const express = require('express');
+const Twitter = require('twitter-lite');
+const Web3 = require('web3');
+require('dotenv').config();
+
+const app = express();
+const port = process.env.PORT || 3000;
+
+// Twitter API credentials
+const client = new Twitter({
+  consumer_key: process.env.TWITTER_CONSUMER_KEY,
+  consumer_secret: process.env.TWITTER_CONSUMER_SECRET,
+  access_token_key: process.env.TWITTER_ACCESS_TOKEN,
+  access_token_secret: process.env.TWITTER_ACCESS_TOKEN_SECRET
+});
+
+// Web3 setup
+const web3 = new Web3(new Web3.providers.HttpProvider(process.env.INFURA_ENDPOINT));
+const contractABI = [...]; // Replace with your contract ABI
+const contractAddress = '0x...'; // Replace with your contract address
+const contract = new web3.eth.Contract(contractABI, contractAddress);
+
+app.get('/storeTweet/:user/:tweetId', async (req, res) => {
+  const { user, tweetId } = req.params;
+
+  try {
+    const tweet = await client.get('statuses/show', { id: tweetId });
+    const content = tweet.text;
+    const timestamp = new Date(tweet.created_at).getTime();
+
+    const tx = contract.methods.storeTweet(tweetId, content, timestamp);
+    const gas = await tx.estimateGas({ from: user });
+    const data = tx.encodeABI();
+    const nonce = await web3.eth.getTransactionCount(user);
+
+    const signedTx = await web3.eth.accounts.signTransaction(
+      {
+        to: contractAddress,
+        data,
+        gas,
+        nonce,
+        chainId: 1
+      },
+      process.env.PRIVATE_KEY // Private key of the user
+    );
+
+    const receipt = await web3.eth.sendSignedTransaction(signedTx.rawTransaction);
+    res.json({ status: 'success', receipt });
+  } catch (error) {
+    res.status(500).json({ status: 'error', error: error.message });
+  }
+});
+
+app.listen(port, () => {
+  console.log(`Server running on port ${port}`);
+});
