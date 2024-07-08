@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Twitter Integration dApp</title>
+  <script src="https://cdn.jsdelivr.net/npm/web3@1.5.2/dist/web3.min.js"></script>
+</head>
+<body>
+  <h1>Twitter Integration dApp</h1>
+  <button id="storeTweetButton">Store Tweet</button>
+
+  <script>
+    const web3 = new Web3(Web3.givenProvider || "http://localhost:8545");
+    const contractABI = [...]; // Replace with your contract ABI
+    const contractAddress = '0x...'; // Replace with your contract address
+    const contract = new web3.eth.Contract(contractABI, contractAddress);
+
+    document.getElementById('storeTweetButton').addEventListener('click', async () => {
+      const user = (await web3.eth.getAccounts())[0];
+      const tweetId = '1234567890'; // Replace with the tweet ID you want to store
+
+      fetch(`/storeTweet/${user}/${tweetId}`)
+        .then(response => response.json())
+        .then(data => {
+          if (data.status === 'success') {
+            console.log('Tweet stored successfully:', data.receipt);
+          } else {
+            console.error('Error storing tweet:', data.error);
+          }
+        });
+    });
+  </script>
+</body>
+</html>
