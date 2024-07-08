@@ -1,0 +1,25 @@
+// SPDX-License-Identifier: MIT
+pragma solidity ^0.8.0;
+
+contract TwitterData {
+    struct Tweet {
+        string tweetId;
+        string content;
+        uint256 timestamp;
+    }
+
+    mapping(address => Tweet[]) public userTweets;
+
+    event TweetStored(address indexed user, string tweetId, string content, uint256 timestamp);
+
+    function storeTweet(string memory tweetId, string memory content, uint256 timestamp) public {
+        Tweet memory newTweet = Tweet(tweetId, content, timestamp);
+        userTweets[msg.sender].push(newTweet);
+
+        emit TweetStored(msg.sender, tweetId, content, timestamp);
+    }
+
+    function getTweets(address user) public view returns (Tweet[] memory) {
+        return userTweets[user];
+    }
+}
